@@ -12,13 +12,14 @@ class Crawler:
 
     def __init__(self, api_key):
         self._api_key = api_key
-        self._crawl_url = Crawler.NESTQUANT_API_ENDPOINT + '%s?category=%s&symbol=%s&api_key=' + self._api_key
+        self._get_download_link_url = Crawler.NESTQUANT_API_ENDPOINT + '/download_link?category=%s&symbol=%s&api_key=' + self._api_key
+        self._get_lastest_data_url = Crawler.NESTQUANT_API_ENDPOINT + '/lastest?category=%s&symbol=%s&api_key=' + self._api_key
 
     def _get(self, url: str):
         """ Interact with GET request """
         res = requests.get(url)
         if res.status_code != 200:
-            raise HTTPError(f"HTTP error status code - {res.status_code}")
+            raise HTTPError(f"HTTP error status code - {res.status_code}: {res.json()['detail']}")
         return res
     
     def _check_location(self, location: str):
@@ -52,9 +53,10 @@ class Crawler:
                 a Response object
         """
         if get_historical_data:
-            url = self._crawl_url % ('', category, symbol)
+            download_link = self._get_download_link_url % (category, symbol)
+            url = self._get(download_link).text[1:-1]
         else:
-            url = self._crawl_url % ('/lastest', category, symbol)
+            url = self._get_lastest_data_url % (category, symbol)
         return self._get(url)
 
     def download_historical_data(
@@ -75,8 +77,9 @@ class Crawler:
                 location: str
                     the destination where the data should be saved.
         """
-        self._check_location(location)
         data_response = self._get_data_response(category, symbol, get_historical_data=True)
+        location = os.path.join(location, data_response.headers['content-disposition'].split(';')[1].split('=')[1].split('.')[0])
+        self._check_location(location)
         z = zipfile.ZipFile(io.BytesIO(data_response.content))
         z.extractall(location)
 
