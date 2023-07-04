@@ -1,26 +1,17 @@
 import os
 import requests
-from requests.exceptions import HTTPError
 
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
 import zipfile, io
+from src.base import Base
 
-class Crawler:
-    NESTQUANT_API_ENDPOINT = os.getenv("NESTQUANT_API_ENDPOINT")
-
+class Crawler(Base):
     def __init__(self, api_key):
-        self._api_key = api_key
-        self._get_download_link_url = Crawler.NESTQUANT_API_ENDPOINT + '/download_link?category=%s&symbol=%s&api_key=' + self._api_key
-        self._get_lastest_data_url = Crawler.NESTQUANT_API_ENDPOINT + '/lastest?category=%s&symbol=%s&api_key=' + self._api_key
-
-    def _get(self, url: str):
-        """ Interact with GET request """
-        res = requests.get(url)
-        if res.status_code != 200:
-            raise HTTPError(f"HTTP error status code - {res.status_code}: {res.json()['detail']}")
-        return res
+        super().__init__(api_key=api_key)
+        self._get_download_link_url = Crawler.NESTQUANT_API_ENDPOINT + 'data/api/download_link?category=%s&symbol=%s&api_key=' + self._api_key
+        self._get_lastest_data_url = Crawler.NESTQUANT_API_ENDPOINT + 'data/api/lastest?category=%s&symbol=%s&api_key=' + self._api_key
     
     def _check_location(self, location: str):
         """ Verify the presence of a folder and create it if it is absent. """
